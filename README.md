@@ -5,6 +5,8 @@ conda env create -f environment.yml
 
 Then, install extra dependencies:
 * pip install torchattacks
+* pip install opencv-python
+* pip install transformers
 * conda install -c conda-forge tqdm
 
 ## Sources
