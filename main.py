@@ -37,13 +37,20 @@ def generate_image(img):
     img_np = img.detach().cpu().numpy()
     return img_np.transpose(1,2,0)
 
+def visualize_x_rec(x_rec, victim):
+    plt.title("x_rec label:" + generate_label(victim.forward(x_rec)))
+    plt.imshow(generate_image(x_rec[0]))
+    plt.show()
+    
     
 def visualize_dip_trace(dip_trace, dip_trace_labels, show_every):
     c = 6
     # TODO: Implement line below better, using 0.499 is hacky
     r = round((len(dip_trace)//show_every)/ c + 0.499)
     
-    fig2 = plt.figure(figsize=(r*2, c*2))
+    print(r,c,len(dip_trace))
+    
+    fig2 = plt.figure()
     fig2.suptitle("DIP Trace")
     
     for i in range (0,len(dip_trace)//show_every):
@@ -58,7 +65,7 @@ def visualize_attacks(attacks):
     c = 2
     r = len(attacks)
     
-    fig = plt.figure(figsize=(r*2, c*2))
+    fig = plt.figure()
     fig.suptitle("Attacks")
     
     for i in range (len(attacks)):
@@ -79,14 +86,14 @@ def visualize_attacks(attacks):
 
         
 if __name__ == "__main__":
-    loaders = dataset.dataset(config.test, 4)
+    loaders = dataset.dataset(config.dataset, 4)
     
     if config.pretrained:
         print('Loading pretrained victim...')
         victim = torch.load(config.pretrained_path)
     else:
         print("Training victim model...")
-        victim = victim_model.victim_model(config.test, config.learning_rate).train_model(config.epochs, loaders)
+        victim = victim_model.victim_model(config.dataset, config.model_type, config.learning_rate).train_model(config.epochs, loaders)
     
     
     successful_attack = False
@@ -110,6 +117,6 @@ if __name__ == "__main__":
     
     x_rec = cross_boundary.manifold_stitching(dip_trace, dip_trace_labels, config.similar_threshold, config.t, config.beta, attacks[ai]['original'], victim)
     
-    
+    visualize_x_rec(x_rec, victim)
     
     

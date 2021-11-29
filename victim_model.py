@@ -5,14 +5,14 @@ import torch
 
 import config
 
-# from transformers import ViTFeatureExtractor,ViTForImageClassification, ViTModel
+from transformers import ViTFeatureExtractor,ViTForImageClassification, ViTModel
 
 from tqdm import tqdm
 import csv
 
 class victim_model():
 
-    def __init__(self, model_type, lr):
+    def __init__(self, dataset, model_type, lr):
         #self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         if model_type == 'mnist':
             self.model = mnist_cnn()#.to(self.device)
@@ -22,10 +22,19 @@ class victim_model():
         #     self.model = VGG('VGG16')
         #     self.optimizer = optim.SGD(self.model.parameters(), lr=lr, momentum = 0.9, weight_decay=5e-4)
         #     self.loss_fn = nn.CrossEntropyLoss()
-        elif model_type == 'cifar10':
+        elif model_type == 'vit' and dataset =='cifar10':
             self.model = cifar10_cnn()#.to(self.device)
             self.optimizer = optim.SGD(self.model.parameters(), lr=lr, momentum = 0.9)
             self.loss_fn = nn.NLLLoss()
+        elif model_type == 'simple_cnn' and dataset =='cifar10':
+            self.model = cifar10_cnn()#.to(self.device)
+            self.optimizer = optim.SGD(self.model.parameters(), lr=lr, momentum = 0.9)
+            self.loss_fn = nn.NLLLoss()
+        elif model_type == 'vgg16' and dataset =='cifar10':
+            self.model = VGG('VGG16')#.to(self.device)
+            self.optimizer = optim.SGD(self.model.parameters(), lr=lr, momentum = 0.9)
+            self.loss_fn = nn.NLLLoss()
+            
         else:
             assert False
             
@@ -157,7 +166,7 @@ class VGG(nn.Module):
         out = self.features(x)
         out = out.view(out.size(0), -1)
         out = self.classifier(out)
-        return out
+        return F.log_softmax(out)
 
     def _make_layers(self, cfg):
         layers = []
@@ -173,26 +182,26 @@ class VGG(nn.Module):
         layers += [nn.AvgPool2d(kernel_size=1, stride=1)]
         return nn.Sequential(*layers)
     
-# class ViTForImageClassification(nn.Module):
-#     def __init__(self, num_labels=10):
-#         super(ViTForImageClassification, self).__init__()
-#         self.vit = ViTModel.from_pretrained('google/vit-base-patch16-224-in21k')
-#         self.dropout = nn.Dropout(0.1)
-#         self.classifier = nn.Linear(self.vit.config.hidden_size, num_labels)
-#         self.num_labels = num_labels
+class ViTForImageClassification(nn.Module):
+     def __init__(self, num_labels=10):
+         super(ViTForImageClassification, self).__init__()
+         self.vit = ViTModel.from_pretrained('google/vit-base-patch16-224-in21k')
+         self.dropout = nn.Dropout(0.1)
+         self.classifier = nn.Linear(self.vit.config.hidden_size, num_labels)
+         self.num_labels = num_labels
 
-#     def forward(self, pixel_values):
-#         outputs = self.vit(pixel_values=pixel_values)
-#         output = self.dropout(outputs.last_hidden_state[:,0])
-#         logits = self.classifier(output)
+     def forward(self, pixel_values):
+         outputs = self.vit(pixel_values=pixel_values)
+         output = self.dropout(outputs.last_hidden_state[:,0])
+         logits = self.classifier(output)
 
-#         return logits
+         return F.log_softmax(logits)
 
 
 
 if __name__ == "__main__":
     import dataset
-    loaders = dataset.dataset(config.test, config.batch_size)
+    loaders = dataset.dataset(config.dataset, config.batch_size)
 
-    victim = victim_model(config.test, config.learning_rate).train_model(config.epochs, loaders)
+    victim = victim_model(config.dataset, config.model_type, config.learning_rate).train_model(config.epochs, loaders)
     torch.save(victim, config.pretrained_path)

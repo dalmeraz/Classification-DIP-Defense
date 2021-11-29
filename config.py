@@ -3,14 +3,15 @@ _cifar_labels = ('plane', 'car', 'bird', 'cat',
            'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
 log_every = 50
 
-test = 'cifar10'
-if test == 'cifar10':
+dataset = 'cifar10'
+if dataset == 'cifar10':
     dataset_labels= _cifar_labels
-    
+
 # Victim Params
+model_type = 'vit' # Options: 'simple_cnn' 'vit' 'vgg16'
 pretrained = True
 pretrained_path = 'victim_model.pt'
-epochs = 5
+epochs = 1
 learning_rate = 0.01
 batch_size = 32
 
